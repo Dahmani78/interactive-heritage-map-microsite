@@ -1,5 +1,5 @@
 import type { Locale } from "@/lib/i18n";
-import SetHtmlLang from "@/components/SetHtmlLang";
+import LanguageSwitch from "@/components/LanguageSwitch";
 
 export default async function LocaleLayout({
   children,
@@ -12,7 +12,18 @@ export default async function LocaleLayout({
 
   return (
     <div data-locale={locale} style={{ minHeight: "100vh" }}>
-      <SetHtmlLang locale={locale} />
+      {/* Header simple */}
+      <header
+        style={{
+          position: "fixed",
+          top: 12,
+          right: 50,
+          zIndex: 9999,
+        }}
+      >
+        <LanguageSwitch locale={locale} />
+      </header>
+
       {children}
     </div>
   );
