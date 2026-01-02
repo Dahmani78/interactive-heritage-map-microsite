@@ -9,6 +9,23 @@ function uniqueSorted(values: string[]) {
   return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b));
 }
 
+// Distance haversine en km entre 2 points [lng, lat]
+function haversineKm(a: [number, number], b: [number, number]) {
+  const toRad = (x: number) => (x * Math.PI) / 180;
+  const R = 6371;
+
+  const dLat = toRad(b[1] - a[1]);
+  const dLng = toRad(b[0] - a[0]);
+  const lat1 = toRad(a[1]);
+  const lat2 = toRad(b[1]);
+
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
 export default function MapShell({ locale }: { locale: Locale }) {
   const dict = getDictionary(locale);
 
@@ -17,6 +34,12 @@ export default function MapShell({ locale }: { locale: Locale }) {
   const [q, setQ] = useState("");
   const [theme, setTheme] = useState("");
   const [period, setPeriod] = useState("");
+
+  // Near me states
+  const [userPos, setUserPos] = useState<[number, number] | null>(null); // [lng, lat]
+  const [locating, setLocating] = useState(false);
+  const [locError, setLocError] = useState<string | null>(null);
+  const [sortByDistance, setSortByDistance] = useState(false);
 
   const themes = useMemo(
     () => uniqueSorted(features.map((f) => f.properties.theme ?? "")),
@@ -27,16 +50,69 @@ export default function MapShell({ locale }: { locale: Locale }) {
     [features]
   );
 
+  const nearMe = () => {
+    setLocError(null);
+    setLocating(true);
+
+    if (!navigator.geolocation) {
+      setLocating(false);
+      setLocError(t(dict, "map.locationUnavailable"));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lng = pos.coords.longitude;
+        const lat = pos.coords.latitude;
+
+        setUserPos([lng, lat]);
+        setSortByDistance(true);
+        setLocating(false);
+
+        // Centre la carte sur l'utilisateur
+        mapRef.current?.flyTo({ center: [lng, lat], zoom: 14 });
+      },
+      (err) => {
+        setLocating(false);
+
+        if (err.code === err.PERMISSION_DENIED) {
+          setLocError(t(dict, "map.permissionDenied"));
+        } else {
+          setLocError(t(dict, "map.locationUnavailable"));
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  // Filtrage + distances + tri
   const filtered = useMemo(() => {
     const qNorm = q.trim().toLowerCase();
-    return features.filter((f) => {
-      const p = f.properties;
-      const okQ = !qNorm || (p.title ?? "").toLowerCase().includes(qNorm);
-      const okTheme = !theme || (p.theme ?? "") === theme;
-      const okPeriod = !period || (p.period_bucket ?? "") === period;
-      return okQ && okTheme && okPeriod;
-    });
-  }, [features, q, theme, period]);
+
+    const base = features
+      .filter((f) => {
+        const p = f.properties;
+        const okQ = !qNorm || (p.title ?? "").toLowerCase().includes(qNorm);
+        const okTheme = !theme || (p.theme ?? "") === theme;
+        const okPeriod = !period || (p.period_bucket ?? "") === period;
+        return okQ && okTheme && okPeriod;
+      })
+      .map((f) => {
+        const coords = f.geometry.coordinates; // [lng, lat]
+        const distanceKm = userPos ? haversineKm(userPos, coords) : null;
+        return { f, distanceKm };
+      });
+
+    if (sortByDistance && userPos) {
+      base.sort((a, b) => {
+        if (a.distanceKm == null) return 1;
+        if (b.distanceKm == null) return -1;
+        return a.distanceKm - b.distanceKm;
+      });
+    }
+
+    return base;
+  }, [features, q, theme, period, userPos, sortByDistance]);
 
   const selectFeature = (f: PlaqueFeature) => {
     const coords = f.geometry.coordinates;
@@ -113,6 +189,26 @@ export default function MapShell({ locale }: { locale: Locale }) {
               </option>
             ))}
           </select>
+
+          {/* Near me button */}
+          <button
+            onClick={nearMe}
+            disabled={locating}
+            style={{
+              width: "100%",
+              padding: 10,
+              border: "1px solid #ddd",
+              borderRadius: 10,
+              background: locating ? "#f2f2f2" : "white",
+              cursor: locating ? "not-allowed" : "pointer",
+            }}
+          >
+            {locating ? t(dict, "map.locating") : t(dict, "map.nearMe")}
+          </button>
+
+          {locError ? (
+            <div style={{ fontSize: 12, color: "#b00020" }}>{locError}</div>
+          ) : null}
         </div>
 
         <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>
@@ -120,7 +216,7 @@ export default function MapShell({ locale }: { locale: Locale }) {
         </div>
 
         <div style={{ display: "grid", gap: 8 }}>
-          {filtered.map((f) => (
+          {filtered.map(({ f, distanceKm }) => (
             <button
               key={f.properties.id}
               onClick={() => selectFeature(f)}
@@ -136,6 +232,7 @@ export default function MapShell({ locale }: { locale: Locale }) {
               <div style={{ fontWeight: 650 }}>{f.properties.title}</div>
               <div style={{ fontSize: 12, opacity: 0.75 }}>
                 {(f.properties.theme ?? "-") + " • " + (f.properties.period_bucket ?? "-")}
+                {distanceKm != null ? ` • ${distanceKm.toFixed(1)} ${t(dict, "map.distanceKm")}` : ""}
               </div>
             </button>
           ))}

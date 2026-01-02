@@ -15,6 +15,14 @@
     "period": "Période"
   },
 
-  "common": { "untitled": "Sans titre" }
+  "common": { "untitled": "Sans titre" },
+
+  "map": {
+    "nearMe": "À proximité",
+    "locating": "Localisation…",
+    "permissionDenied": "Autorisation refusée",
+    "locationUnavailable": "Localisation indisponible",
+    "distanceKm": "km"
+}
 
 }

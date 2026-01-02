@@ -15,6 +15,14 @@
     "period": "Period"
   },
 
-  "common": { "untitled": "Untitled" }
+  "common": { "untitled": "Untitled" },
+
+  "map": {
+     "nearMe": "Near me",
+     "locating": "Locating…",
+     "permissionDenied": "Permission denied",
+     "locationUnavailable": "Location unavailable",
+     "distanceKm": "km"
+}
 
 }
