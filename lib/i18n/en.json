@@ -1,0 +1,20 @@
+{
+  "nav": {
+    "map": "Map",
+    "backToMap": "Back to map",
+    "language": "Language"
+  },
+  "home": {
+    "title": "Interactive Heritage Map",
+    "openMap": "Open map"
+  },
+  "plaque": {
+    "title": "Heritage plaque",
+    "viewDetails": "View details",
+    "theme": "Theme",
+    "period": "Period"
+  },
+
+  "common": { "untitled": "Untitled" }
+
+}

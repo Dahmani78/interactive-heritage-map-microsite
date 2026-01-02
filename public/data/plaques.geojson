@@ -1,0 +1,16 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "p1",
+        "slug": "plaque-1",
+        "title": "Plaque 1",
+        "theme": "Histoire",
+        "period_bucket": "1900-1950"
+      },
+      "geometry": { "type": "Point", "coordinates": [-7.616, 33.592] }
+    }
+  ]
+}

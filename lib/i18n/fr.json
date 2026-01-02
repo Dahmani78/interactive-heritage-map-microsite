@@ -1,0 +1,20 @@
+{
+  "nav": {
+    "map": "Carte",
+    "backToMap": "Retour à la carte",
+    "language": "Langue"
+  },
+  "home": {
+    "title": "Carte patrimoniale interactive",
+    "openMap": "Ouvrir la carte"
+  },
+  "plaque": {
+    "title": "Plaque patrimoniale",
+    "viewDetails": "Voir les détails",
+    "theme": "Thème",
+    "period": "Période"
+  },
+
+  "common": { "untitled": "Sans titre" }
+
+}
